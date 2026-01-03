@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AI Quiz Builder</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #0f172a;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.container {
+    width: 420px;
+    text-align: center;
+}
+
+input {
+    width: 70%;
+    padding: 10px;
+    border-radius: 6px;
+    border: none;
+}
+
+button {
+    padding: 10px;
+    margin: 8px;
+    border: none;
+    border-radius: 6px;
+    background: #6366f1;
+    color: white;
+    cursor: pointer;
+}
+
+.card {
+    background: white;
+    color: black;
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 15px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <h2>🧠 AI Quiz Builder</h2>
+
+    <input id="topic" placeholder="Enter topic (DBMS)">
+    <br>
+    <button onclick="generateQuiz()">Generate Quiz</button>
+
+   <div class="card" onclick="flipCard()">
+    <div class="inner" id="cardInner">
+        <div class="front">
+            <p id="question">Question will appear here</p>
+        </div>
+        <div class="back">
+            <p id="answer">Answer will appear here</p>
+        </div>
+    </div>
+</div>
+
+<script>
+let data = [];
+let i = 0;
+let score = 0;
+let time = 10;
+let timerInterval = null;
+
+async function generateQuiz() {
+    const topic = document.getElementById("topic").value;
+    if (!topic) {
+        alert("Enter topic");
+        return;
+    }
+
+    const res = await fetch("http://127.0.0.1:5000/generate-quiz", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ topic })
+    });
+
+    const json = await res.json();
+    data = json.questions;
+    i = 0;
+    score = 0;
+
+    document.getElementById("score").innerText = score;
+    show();
+}
+
+function show() {
+    clearInterval(timerInterval);
+    time = 10;
+    document.getElementById("timer").innerText = time;
+
+    const q = data[i];
+    document.getElementById("question").innerText = q.question;
+
+    const optionsDiv = document.getElementById("options");
+    optionsDiv.innerHTML = "";
+    document.getElementById("result").innerText = "";
+
+    q.options.forEach(opt => {
+        const btn = document.createElement("button");
+        btn.innerText = opt;
+        btn.onclick = () => checkAnswer(opt);
+        optionsDiv.appendChild(btn);
+    });
+
+    timerInterval = setInterval(() => {
+        time--;
+        document.getElementById("timer").innerText = time;
+
+        if (time === 0) {
+            clearInterval(timerInterval);
+            document.getElementById("result").innerText =
+                "⏰ Time’s up! Correct: " + q.answer;
+        }
+    }, 1000);
+}
+
+function checkAnswer(selected) {
+    clearInterval(timerInterval);
+    const correct = data[i].answer;
+
+    if (selected === correct) {
+        score++;
+        document.getElementById("score").innerText = score;
+        document.getElementById("result").innerText = "✅ Correct!";
+    } else {
+        document.getElementById("result").innerText =
+            "❌ Wrong! Correct: " + correct;
+    }
+}
+
+function next() {
+    if (i < data.length - 1) {
+        i++;
+        show();
+    }
+}
+
+function prev() {
+    if (i > 0) {
+        i--;
+        show();
+    }
+}
+</script>
