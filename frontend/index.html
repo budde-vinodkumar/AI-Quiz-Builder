@@ -5,44 +5,114 @@
 <title>AI Quiz Builder</title>
 
 <style>
+/* ===== GLOBAL ===== */
 body {
-    font-family: Arial, sans-serif;
-    background: #0f172a;
-    color: white;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    color: #ffffff;
+    height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
 }
 
+/* ===== CONTAINER ===== */
 .container {
     width: 420px;
+    background: #020617;
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
     text-align: center;
 }
 
+/* ===== HEADER ===== */
+h1 {
+    margin-bottom: 5px;
+}
+
+.subtitle {
+    color: #94a3b8;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+/* ===== INPUT ===== */
+.input-box {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
 input {
-    width: 70%;
+    flex: 1;
     padding: 10px;
-    border-radius: 6px;
+    border-radius: 8px;
     border: none;
+    outline: none;
 }
 
+/* ===== BUTTONS ===== */
 button {
-    padding: 10px;
-    margin: 8px;
-    border: none;
-    border-radius: 6px;
     background: #6366f1;
+    border: none;
     color: white;
+    padding: 10px 14px;
+    border-radius: 8px;
     cursor: pointer;
+    transition: 0.2s;
 }
 
+button:hover {
+    background: #4f46e5;
+}
+
+/* ===== QUIZ CARD ===== */
 .card {
-    background: white;
-    color: black;
-    padding: 15px;
-    border-radius: 10px;
-    margin-top: 15px;
+    background: #ffffff;
+    color: #0f172a;
+    padding: 18px;
+    border-radius: 12px;
+    min-height: 130px;
+    margin-bottom: 15px;
+}
+
+#question {
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+/* ===== OPTIONS ===== */
+#options button {
+    display: block;
+    width: 100%;
+    margin: 6px 0;
+    background: #e5e7eb;
+    color: #111827;
+}
+
+#options button:hover {
+    background: #c7d2fe;
+}
+
+/* ===== INFO ===== */
+.info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+#result {
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+/* ===== NAV ===== */
+.nav {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
 }
 </style>
 </head>
@@ -50,34 +120,44 @@ button {
 <body>
 
 <div class="container">
-    <h2>🧠 AI Quiz Builder</h2>
+    <h1>🧠 AI Quiz Builder</h1>
+    <p class="subtitle">Learn faster with AI-generated quizzes</p>
 
-    <input id="topic" placeholder="Enter topic (DBMS)">
-    <br>
-    <button onclick="generateQuiz()">Generate Quiz</button>
+    <div class="input-box">
+        <input id="topic" placeholder="Enter topic (DBMS)">
+        <button onclick="generateQuiz()">Generate</button>
+    </div>
 
-   <div class="card" onclick="flipCard()">
-    <div class="inner" id="cardInner">
-        <div class="front">
-            <p id="question">Question will appear here</p>
-        </div>
-        <div class="back">
-            <p id="answer">Answer will appear here</p>
-        </div>
+    <div class="info">
+        <span>Score: <b id="score">0</b></span>
+        <span>⏱ <b id="timer">10</b>s</span>
+    </div>
+
+    <div class="card">
+        <p id="question">Enter a topic to start</p>
+        <div id="options"></div>
+        <p id="result"></p>
+    </div>
+
+    <div class="nav">
+        <button onclick="prev()">⬅ Previous</button>
+        <button onclick="next()">Next ➡</button>
     </div>
 </div>
 
 <script>
-let data = [];
-let i = 0;
+/* ===== STATE ===== */
+let questions = [];
+let index = 0;
 let score = 0;
 let time = 10;
-let timerInterval = null;
+let timerInterval;
 
+/* ===== GENERATE QUIZ ===== */
 async function generateQuiz() {
-    const topic = document.getElementById("topic").value;
+    const topic = document.getElementById("topic").value.trim();
     if (!topic) {
-        alert("Enter topic");
+        alert("Please enter a topic");
         return;
     }
 
@@ -87,26 +167,27 @@ async function generateQuiz() {
         body: JSON.stringify({ topic })
     });
 
-    const json = await res.json();
-    data = json.questions;
-    i = 0;
+    const data = await res.json();
+    questions = data.questions;
+    index = 0;
     score = 0;
-
     document.getElementById("score").innerText = score;
-    show();
+
+    showQuestion();
 }
 
-function show() {
+/* ===== SHOW QUESTION ===== */
+function showQuestion() {
     clearInterval(timerInterval);
     time = 10;
     document.getElementById("timer").innerText = time;
+    document.getElementById("result").innerText = "";
 
-    const q = data[i];
+    const q = questions[index];
     document.getElementById("question").innerText = q.question;
 
     const optionsDiv = document.getElementById("options");
     optionsDiv.innerHTML = "";
-    document.getElementById("result").innerText = "";
 
     q.options.forEach(opt => {
         const btn = document.createElement("button");
@@ -127,9 +208,10 @@ function show() {
     }, 1000);
 }
 
+/* ===== CHECK ANSWER ===== */
 function checkAnswer(selected) {
     clearInterval(timerInterval);
-    const correct = data[i].answer;
+    const correct = questions[index].answer;
 
     if (selected === correct) {
         score++;
@@ -141,17 +223,21 @@ function checkAnswer(selected) {
     }
 }
 
+/* ===== NAVIGATION ===== */
 function next() {
-    if (i < data.length - 1) {
-        i++;
-        show();
+    if (index < questions.length - 1) {
+        index++;
+        showQuestion();
     }
 }
 
 function prev() {
-    if (i > 0) {
-        i--;
-        show();
+    if (index > 0) {
+        index--;
+        showQuestion();
     }
 }
 </script>
+
+</body>
+</html>
