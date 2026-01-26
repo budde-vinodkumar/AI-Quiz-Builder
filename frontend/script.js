@@ -1,45 +1,66 @@
-let quizData = [];
-let index = 0;
+// =======================
+// ELEMENTS
+// =======================
+const topicInput = document.getElementById("topic");
+const generateBtn = document.getElementById("generateBtn");
+const questionEl = document.getElementById("question");
+const optionsEl = document.getElementById("options");
+const resultEl = document.getElementById("result");
+const prevBtn = document.getElementById("prevBtn");
+const nextBtn = document.getElementById("nextBtn");
 
-async function generateQuiz() {
-    const topic = document.getElementById("topicInput").value;
+// =======================
+// STATE
+// =======================
+let quiz = [];
+let currentIndex = 0;
+let score = 0;
 
-    if (!topic) {
-        alert("Enter topic");
-        return;
-    }
+// =======================
+// SAMPLE DATA (fallback)
+// =======================
+const demoQuiz = [
+  {
+    question: "What does DBMS stand for?",
+    options: [
+      "Database Management System",
+      "Data Backup Management System",
+      "Dynamic Base Model System",
+      "Digital Business Management System"
+    ],
+    answer: "Database Management System"
+  },
+  {
+    question: "Which key uniquely identifies a record?",
+    options: ["Foreign Key", "Primary Key", "Candidate Key", "Composite Key"],
+    answer: "Primary Key"
+  },
+  {
+    question: "Which language is used to query databases?",
+    options: ["HTML", "CSS", "SQL", "Python"],
+    answer: "SQL"
+  }
+];
 
-    const response = await fetch("http://127.0.0.1:5000/generate-quiz", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic })
-    });
+// =======================
+// GENERATE QUIZ
+// =======================
+generateBtn.addEventListener("click", () => {
+  const topic = topicInput.value.trim();
 
-    const data = await response.json();
-    quizData = data.questions;
-    index = 0;
+  if (topic === "") {
+    alert("Please enter a topic");
+    return;
+  }
 
-    show();
-}
+  // Later: replace with backend fetch
+  quiz = demoQuiz;
+  currentIndex = 0;
+  score = 0;
+  resultEl.textContent = "";
 
-function show() {
-    document.getElementById("questionText").innerText =
-        quizData[index].question;
+  renderQuestion();
+});
 
-    document.getElementById("answerText").innerText =
-        quizData[index].answer;
-}
-
-function nextQuestion() {
-    if (index < quizData.length - 1) {
-        index++;
-        show();
-    }
-}
-
-function prevQuestion() {
-    if (index > 0) {
-        index--;
-        show();
-    }
-}
+// =======================
+// RENDER QUE
